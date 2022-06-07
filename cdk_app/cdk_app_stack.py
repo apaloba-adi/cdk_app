@@ -1,13 +1,13 @@
+from email.policy import Policy
 from sys import prefix
 from aws_cdk import (
     # Duration,
     Stack,
     aws_s3 as s3,
-    aws_s3_assets as s3_assets,
     aws_s3_deployment as s3_deploy,
-    aws_s3_notifications as s3_notifs,
     aws_lambda as _lambda,
-    aws_lambda_event_sources as _lambda_event_sources
+    aws_lambda_event_sources as _lambda_event_sources,
+    aws_iam as iam
 )
 from constructs import Construct
 
@@ -19,8 +19,7 @@ class CdkAppStack(Stack):
         bucket = s3.Bucket(
             self,
             "LogBucket",
-            versioned=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ALL
+            versioned=True
         )
 
         s3_deploy.BucketDeployment(
@@ -43,4 +42,13 @@ class CdkAppStack(Stack):
             )]
         )
 
-        bucket.grant_read(parsing)
+        bucket.grant_read_write(parsing)
+
+        role = iam.Role(self, "S3AccessRole", assumed_by=iam.ServicePrincipal("s3.amazonaws.com"))
+
+        bucket.add_to_resource_policy(iam.PolicyStatement(
+            principals=[role],
+            actions=["s3:PutBucketPolicy", "s3:GetObject", "s3:GetObjectAttributes"],
+            effect=iam.Effect.ALLOW,
+            resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)]
+        ))
