@@ -17,15 +17,13 @@ class CdkAppStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         bucket = s3.Bucket(
-            self,
-            "LogBucket",
+            self, "LogBucket",
             versioned=True,
             block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
         )
 
         s3_deploy.BucketDeployment(
-            self,
-            "DeployLog",
+            self, "DeployLog",
             sources=[s3_deploy.Source.asset("/Users/apaloba/Library/Application Support/Google/Chrome/", exclude=["**", "!chrome_debug.log"])],
             destination_bucket=bucket
         )
@@ -33,8 +31,7 @@ class CdkAppStack(Stack):
         lambda_role = iam.Role(self, "S3toLambdaRole", assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"))
 
         parsing = _lambda.Function(
-            self,
-            "ParsingLambda",
+            self, "ParsingLambda",
             code=_lambda.Code.from_asset("lambda"),
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler= "parser.handler",
@@ -52,6 +49,7 @@ class CdkAppStack(Stack):
             resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)],
             effect=iam.Effect.ALLOW
         ))
+
         """
         bucket.add_to_resource_policy(iam.PolicyStatement(
             sid="AccessPolicy",
@@ -61,3 +59,24 @@ class CdkAppStack(Stack):
             resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)]
         ))
         """
+
+        process_id = dynamodb.Attribute(name="ProcessID", type=dynamodb.AttributeType.NUMBER)
+        thread_id = dynamodb.Attribute(name="ThreadID", type=dynamodb.AttributeType.NUMBER)
+        date = dynamodb.Attribute(name="Date", type=dynamodb.AttributeType.NUMBER)
+        time = dynamodb.Attribute(name="Time", type=dynamodb.AttributeType.NUMBER)
+        logging_level = dynamodb.Attribute(name="LoggingLevel", type=dynamodb.AttributeType.STRING)
+        source_code = dynamodb.Attribute(name="Source-Code File", type=dynamodb.AttributeType.STRING)
+        line_number = dynamodb.Attribute(name="Line Number",type=dynamodb.AttributeType.NUMBER)
+
+        table = dynamodb.Table(
+            self, "LogTable",
+            partition_key=source_code,
+            sort_key=line_number,
+            billing_mode=dynamodb.BillingMode.PROVISIONED
+        )
+
+        table.add_global_secondary_index(
+            index_name="Date-Time",
+            partition_key=date,
+            sort_key=time
+        )
