@@ -1,7 +1,6 @@
-from email.policy import Policy
-from sys import prefix
 from aws_cdk import (
     # Duration,
+    CustomResource,
     Stack,
     aws_s3 as s3,
     aws_s3_deployment as s3_deploy,
@@ -19,7 +18,8 @@ class CdkAppStack(Stack):
         bucket = s3.Bucket(
             self,
             "LogBucket",
-            versioned=True
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
         )
 
         s3_deploy.BucketDeployment(
@@ -28,6 +28,8 @@ class CdkAppStack(Stack):
             sources=[s3_deploy.Source.asset("/Users/apaloba/Library/Application Support/Google/Chrome/", exclude=["**", "!chrome_debug.log"])],
             destination_bucket=bucket
         )
+
+        lambda_role = iam.Role(self, "S3toLambdaRole", assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"))
 
         parsing = _lambda.Function(
             self,
@@ -39,16 +41,21 @@ class CdkAppStack(Stack):
                 bucket, 
                 events=[s3.EventType.OBJECT_CREATED],
                 filters=[s3.NotificationKeyFilter(prefix="", suffix=".log")]
-            )]
+            )],
+            role=lambda_role
         )
 
-        bucket.grant_read_write(parsing)
-
-        role = iam.Role(self, "S3AccessRole", assumed_by=iam.ServicePrincipal("s3.amazonaws.com"))
+        parsing.add_to_role_policy(iam.PolicyStatement(
+            sid="RolePolicy",
+            actions=["*"],
+            resources=["*"],
+            effect=iam.Effect.ALLOW
+        ))
 
         bucket.add_to_resource_policy(iam.PolicyStatement(
-            principals=[role],
-            actions=["s3:PutBucketPolicy", "s3:GetObject", "s3:GetObjectAttributes"],
+            sid="AccessPolicy",
+            principals=[lambda_role, iam.AccountPrincipal(self.account)],
+            actions=["s3:*"],
             effect=iam.Effect.ALLOW,
             resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)]
         ))
