@@ -6,7 +6,8 @@ from aws_cdk import (
     aws_s3_deployment as s3_deploy,
     aws_lambda as _lambda,
     aws_lambda_event_sources as _lambda_event_sources,
-    aws_iam as iam
+    aws_iam as iam,
+    aws_dynamodb as dynamodb
 )
 from constructs import Construct
 
@@ -47,11 +48,11 @@ class CdkAppStack(Stack):
 
         parsing.add_to_role_policy(iam.PolicyStatement(
             sid="RolePolicy",
-            actions=["*"],
-            resources=["*"],
+            actions=["s3:*"],
+            resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)],
             effect=iam.Effect.ALLOW
         ))
-
+        """
         bucket.add_to_resource_policy(iam.PolicyStatement(
             sid="AccessPolicy",
             principals=[lambda_role, iam.AccountPrincipal(self.account)],
@@ -59,3 +60,4 @@ class CdkAppStack(Stack):
             effect=iam.Effect.ALLOW,
             resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)]
         ))
+        """
