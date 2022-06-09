@@ -1,6 +1,7 @@
 from aws_cdk import (
     # Duration,
     CustomResource,
+    Duration,
     Stack,
     aws_s3 as s3,
     aws_s3_deployment as s3_deploy,
@@ -28,7 +29,7 @@ class CdkAppStack(Stack):
             destination_bucket=bucket
         )
 
-        lambda_role = iam.Role(self, "S3toLambdaRole", assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"))
+        parsing_role = iam.Role(self, "S3toLambdatoDynamoDB", assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"))
 
         parsing = _lambda.Function(
             self, "ParsingLambda",
@@ -40,11 +41,12 @@ class CdkAppStack(Stack):
                 events=[s3.EventType.OBJECT_CREATED],
                 filters=[s3.NotificationKeyFilter(prefix="", suffix=".log")]
             )],
-            role=lambda_role
+            timeout=Duration.minutes(5),
+            role=parsing_role
         )
 
         parsing.add_to_role_policy(iam.PolicyStatement(
-            sid="RolePolicy",
+            sid="S3Policy",
             actions=["s3:*"],
             resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)],
             effect=iam.Effect.ALLOW
@@ -60,16 +62,16 @@ class CdkAppStack(Stack):
         ))
         """
 
-        process_id = dynamodb.Attribute(name="ProcessID", type=dynamodb.AttributeType.NUMBER)
-        thread_id = dynamodb.Attribute(name="ThreadID", type=dynamodb.AttributeType.NUMBER)
-        date = dynamodb.Attribute(name="Date", type=dynamodb.AttributeType.NUMBER)
-        time = dynamodb.Attribute(name="Time", type=dynamodb.AttributeType.NUMBER)
-        logging_level = dynamodb.Attribute(name="LoggingLevel", type=dynamodb.AttributeType.STRING)
+        #process_id = dynamodb.Attribute(name="ProcessID", type=dynamodb.AttributeType.NUMBER)
+        #thread_id = dynamodb.Attribute(name="ThreadID", type=dynamodb.AttributeType.NUMBER)
+        date = dynamodb.Attribute(name="Date", type=dynamodb.AttributeType.STRING)
+        time = dynamodb.Attribute(name="Time", type=dynamodb.AttributeType.STRING)
+        #logging_level = dynamodb.Attribute(name="LoggingLevel", type=dynamodb.AttributeType.STRING)
         source_code = dynamodb.Attribute(name="Source-Code File", type=dynamodb.AttributeType.STRING)
         line_number = dynamodb.Attribute(name="Line Number",type=dynamodb.AttributeType.NUMBER)
 
         table = dynamodb.Table(
-            self, "LogTable",
+            self, "LogItems",
             partition_key=source_code,
             sort_key=line_number,
             billing_mode=dynamodb.BillingMode.PROVISIONED
@@ -80,3 +82,10 @@ class CdkAppStack(Stack):
             partition_key=date,
             sort_key=time
         )
+
+        parsing.add_to_role_policy(iam.PolicyStatement(
+            sid="DynamoDBPolicy",
+            actions=["dynamodb:*"],
+            resources=[table.table_arn, "{}/*".format(table.table_arn)],
+            effect=iam.Effect.ALLOW
+        ))
