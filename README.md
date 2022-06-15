@@ -7,7 +7,7 @@
 
 ### Not done from this application
 - Creating table from Athena
-    - Tables cannot be created via the CDK
+    - Tables based on data located in S3 buckets cannot be created via the CDK
 - Visualizations done by Grafana
     - Grafana does not have any support from the CDK
 
