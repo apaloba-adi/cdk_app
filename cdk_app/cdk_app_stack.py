@@ -1,5 +1,6 @@
 from aws_cdk import (
     # Duration,
+    CfnTag,
     CustomResource,
     Duration,
     Stack,
@@ -8,7 +9,9 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_lambda_event_sources as _lambda_event_sources,
     aws_iam as iam,
-    aws_dynamodb as dynamodb
+    aws_dynamodb as dynamodb,
+    aws_athena as athena,
+    aws_glue as glue
 )
 from constructs import Construct
 
@@ -17,75 +20,125 @@ class CdkAppStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        bucket = s3.Bucket(
-            self, "LogBucket",
+        start_bucket = s3.Bucket(
+            self, 'LogBucket',
             versioned=True,
             block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
         )
 
         s3_deploy.BucketDeployment(
-            self, "DeployLog",
-            sources=[s3_deploy.Source.asset("/Users/apaloba/Library/Application Support/Google/Chrome/", exclude=["**", "!chrome_debug.log"])],
-            destination_bucket=bucket
+            self, 'DeployLog',
+            sources=[s3_deploy.Source.asset('/Users/apaloba/Library/Application Support/Google/Chrome/', exclude=['**', '!chrome_debug.log'])],
+            destination_bucket=start_bucket
         )
 
-        parsing_role = iam.Role(self, "S3toLambdatoDynamoDB", assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"))
+        parsing_role = iam.Role(self, 'S3toLambdatoAthena', assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'))
 
         parsing = _lambda.Function(
-            self, "ParsingLambda",
-            code=_lambda.Code.from_asset("lambda"),
+            self, 'ParsingLambda',
+            code=_lambda.Code.from_asset('lambda'),
             runtime=_lambda.Runtime.PYTHON_3_9,
-            handler= "parser.handler",
+            handler= 'parser.handler',
             events=[_lambda_event_sources.S3EventSource(
-                bucket, 
+                start_bucket, 
                 events=[s3.EventType.OBJECT_CREATED],
-                filters=[s3.NotificationKeyFilter(prefix="", suffix=".log")]
+                filters=[s3.NotificationKeyFilter(prefix='', suffix='.log')]
             )],
             timeout=Duration.minutes(5),
             role=parsing_role
         )
 
         parsing.add_to_role_policy(iam.PolicyStatement(
-            sid="S3Policy",
-            actions=["s3:*"],
-            resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)],
+            sid='S3Policy',
+            actions=['s3:*'],
+            resources=[start_bucket.bucket_arn, '{}/*'.format(start_bucket.bucket_arn)],
             effect=iam.Effect.ALLOW
         ))
 
-        """
-        bucket.add_to_resource_policy(iam.PolicyStatement(
-            sid="AccessPolicy",
-            principals=[lambda_role, iam.AccountPrincipal(self.account)],
-            actions=["s3:*"],
-            effect=iam.Effect.ALLOW,
-            resources=[bucket.bucket_arn, "{}/*".format(bucket.bucket_arn)]
+        parsing.add_to_role_policy(iam.PolicyStatement(
+            sid='AthenaPolicy',
+            actions=['athena:*'],
+            resources=['arn:aws:athena:us-east-1:051270296548:workgroup/log_work_group'],
+            effect=iam.Effect.ALLOW
         ))
-        """
 
-        #process_id = dynamodb.Attribute(name="ProcessID", type=dynamodb.AttributeType.NUMBER)
-        #thread_id = dynamodb.Attribute(name="ThreadID", type=dynamodb.AttributeType.NUMBER)
-        date = dynamodb.Attribute(name="Date", type=dynamodb.AttributeType.STRING)
-        time = dynamodb.Attribute(name="Time", type=dynamodb.AttributeType.STRING)
-        #logging_level = dynamodb.Attribute(name="LoggingLevel", type=dynamodb.AttributeType.STRING)
-        source_code = dynamodb.Attribute(name="Source-Code File", type=dynamodb.AttributeType.STRING)
-        line_number = dynamodb.Attribute(name="Line Number",type=dynamodb.AttributeType.NUMBER)
+        '''
+        bucket.add_to_resource_policy(iam.PolicyStatement(
+            sid='AccessPolicy',
+            principals=[lambda_role, iam.AccountPrincipal(self.account)],
+            actions=['s3:*'],
+            effect=iam.Effect.ALLOW,
+            resources=[bucket.bucket_arn, '{}/*'.format(bucket.bucket_arn)]
+        ))
+        
+
+        #process_id = dynamodb.Attribute(name='ProcessID', type=dynamodb.AttributeType.NUMBER)
+        #thread_id = dynamodb.Attribute(name='ThreadID', type=dynamodb.AttributeType.NUMBER)
+        date = dynamodb.Attribute(name='Date', type=dynamodb.AttributeType.STRING)
+        time = dynamodb.Attribute(name='Time', type=dynamodb.AttributeType.STRING)
+        #logging_level = dynamodb.Attribute(name='LoggingLevel', type=dynamodb.AttributeType.STRING)
+        source_code = dynamodb.Attribute(name='Source-Code File', type=dynamodb.AttributeType.STRING)
+        line_number = dynamodb.Attribute(name='Line Number',type=dynamodb.AttributeType.NUMBER)
+        tag = dynamodb.Attribute(name='Tag', type=dynamodb.AttributeType.STRING)
 
         table = dynamodb.Table(
-            self, "LogItems",
-            partition_key=source_code,
-            sort_key=line_number,
+            self, 'LogItems',
+            partition_key=tag,
+            sort_key=date,
             billing_mode=dynamodb.BillingMode.PROVISIONED
         )
 
         table.add_global_secondary_index(
-            index_name="Date-Time",
+            index_name='Date_Time',
             partition_key=date,
             sort_key=time
         )
 
+        table.add_global_secondary_index(
+            index_name='Source-Code_Line-Number',
+            partition_key=source_code,
+            sort_key=line_number
+        )
+
         parsing.add_to_role_policy(iam.PolicyStatement(
-            sid="DynamoDBPolicy",
-            actions=["dynamodb:*"],
-            resources=[table.table_arn, "{}/*".format(table.table_arn)],
+            sid='DynamoDBPolicy',
+            actions=['dynamodb:*'],
+            resources=[table.table_arn, '{}/*'.format(table.table_arn)],
             effect=iam.Effect.ALLOW
         ))
+
+        '''
+
+        athena_bucket = s3.Bucket(
+            self, 'AthenaTable',
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
+        )
+
+        grafana_bucket = s3.Bucket(
+            self, 'grafana-athena-query-results-test',
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
+        )
+
+        work_group = athena.CfnWorkGroup(
+            self, 'LogWorkGroup',
+            name='log_work_group',
+            recursive_delete_option=None,
+            state='ENABLED',
+            tags=[CfnTag(key='GrafanaDataSource', value='true')],
+            work_group_configuration=athena.CfnWorkGroup.WorkGroupConfigurationProperty(
+                result_configuration=athena.CfnWorkGroup.ResultConfigurationProperty(
+                    output_location='s3://{}'.format(athena_bucket.bucket_name)
+                )
+            )
+        )
+
+        database = glue.CfnDatabase(
+            self, 'LogDatabase',
+            database_input=glue.CfnDatabase.DatabaseInputProperty(
+                name='log_database',
+                description='Database of Chrome Log Information'
+            ),
+            catalog_id='051270296548'
+        )
