@@ -7,7 +7,9 @@
 
 ### Not done from this application
 - Creating table from Athena
+    - Tables cannot be created via the CDK
 - Visualizations done by Grafana
+    - Grafana does not have any support from the CDK
 
 ### Functionality Removed
 - Uploading log data to DynamoDB
