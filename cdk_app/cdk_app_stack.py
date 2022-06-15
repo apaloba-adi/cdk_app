@@ -1,3 +1,5 @@
+from multiprocessing import Event
+from unicodedata import name
 from aws_cdk import (
     # Duration,
     CfnTag,
@@ -9,10 +11,10 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_lambda_event_sources as _lambda_event_sources,
     aws_iam as iam,
-    aws_dynamodb as dynamodb,
     aws_athena as athena,
     aws_glue as glue
 )
+import aws_cdk
 from constructs import Construct
 
 class CdkAppStack(Stack):
@@ -32,7 +34,7 @@ class CdkAppStack(Stack):
             destination_bucket=start_bucket
         )
 
-        parsing_role = iam.Role(self, 'S3toLambdatoAthena', assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'))
+        lambda_role = iam.Role(self, 'LambdaRole', assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'))
 
         parsing = _lambda.Function(
             self, 'ParsingLambda',
@@ -45,7 +47,7 @@ class CdkAppStack(Stack):
                 filters=[s3.NotificationKeyFilter(prefix='', suffix='.log')]
             )],
             timeout=Duration.minutes(5),
-            role=parsing_role
+            role=lambda_role
         )
 
         parsing.add_to_role_policy(iam.PolicyStatement(
@@ -141,4 +143,25 @@ class CdkAppStack(Stack):
                 description='Database of Chrome Log Information'
             ),
             catalog_id='051270296548'
+        )
+
+        table_generation = athena.CfnNamedQuery(
+            self, 'TableGenerationQuery',
+            database='log_database',
+            query_string="CREATE EXTERNAL TABLE IF NOT EXISTS `log_database`.`log_table` (\n" +
+                        "\t`timestamp` timestamp,\n" +
+                        "\t`tag` string,\n" +
+                        "\t`source_file` string,\n" +
+                        "\t`line_num` string,\n" +
+                        "\t`thread_id` string,\n" +
+                        "\t`process_id` string,\n" +
+                        "\t`logging_level` string\n" +
+                        ")\nROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'\n" + 
+                        "WITH SERDEPROPERTIES (\n" +
+                            "\t'serialization.format' = '	',\n"+
+                            "\t'field.delim' = '	'\n" +
+                        ") LOCATION 's3://cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo/'\n" +
+                         "TBLPROPERTIES ('has_encrypted_data'='false');\n",
+            name='table_generation',
+            work_group='log_work_group'
         )

@@ -34,7 +34,7 @@ def handler(event, context):
 
     pattern = re.compile('^\[[\w\W]+?\]')
 
-    new_log = open('/tmp/new_log.csv', 'a')
+    new_log = open('/tmp/new_log.tsv', 'w+')
     for line in file:
         match = pattern.match(line)
         if match:
@@ -49,34 +49,14 @@ def handler(event, context):
             timestamp = "2022-{}-{} {}:{}:{}".format(date_time[0][:2], date_time[0][2:4], date_time[1][0:2], date_time[1][2:4], date_time[1][4:])
             tag = line[match.end():].strip()
             try:
-                print('{},{},{},{},{},{},{}\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
-                new_log.write('{},{},{},{},{},{},{}\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
+                print('{}\t{}\t{}\t{}\t{}\t{}\t{}\n\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
+                new_log.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
             except ClientError as e:
                 logging.error(e)
     new_log.close()
     try:
-        s3.upload_file(new_log.name, bucket_name, 'log_data.csv')
+        s3.upload_file(new_log.name, bucket_name, 'log_data.tsv')
     except ClientError as e:
         logging.error(e)
-
-    athena = boto3.client('athena')
-    try:
-        athena.start_query_execution(
-            QueryString = 'CREATE EXTERNAL TABLE IF NOT EXISTS `log_database`.`test` ('+
-                '`timestamp` timestamp,'+
-                '`tag` string,' +
-                '`source_file` string,' +
-                '`line_number` string,' +
-                '`process_id` string,'+
-                '`thread_id` string,' +
-                '`logging_level` string' +
-            ") ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'" +
-            'WITH SERDEPROPERTIES ('+
-                "'serialization.format' = ','," +
-                "'field.delim' = ','" +
-            ") LOCATION 's3://cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo/'" +
-            "TBLPROPERTIES ('has_encrypted_data'='false');'",
-        )
-    except ClientError as e:
-        logging.error(e)
+    
     return 'Completed'
