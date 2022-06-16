@@ -52,11 +52,11 @@ def handler(event, context):
                 print('{}\t{}\t{}\t{}\t{}\t{}\t{}\n\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
                 new_log.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
             except ClientError as e:
-                logging.error(e)
+                return logging.error(e)
     new_log.close()
     try:
         s3.upload_file(new_log.name, bucket_name, 'log_data.tsv')
     except ClientError as e:
-        logging.error(e)
+        return logging.error(e)
     
     return 'Completed'
