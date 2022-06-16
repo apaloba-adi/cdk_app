@@ -1,9 +1,5 @@
-from multiprocessing import Event
-from unicodedata import name
 from aws_cdk import (
-    # Duration,
     CfnTag,
-    CustomResource,
     Duration,
     Stack,
     aws_s3 as s3,
@@ -14,7 +10,6 @@ from aws_cdk import (
     aws_athena as athena,
     aws_glue as glue
 )
-import aws_cdk
 from constructs import Construct
 
 class CdkAppStack(Stack):
@@ -34,7 +29,11 @@ class CdkAppStack(Stack):
             destination_bucket=start_bucket
         )
 
-        lambda_role = iam.Role(self, 'LambdaRole', assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'))
+        lambda_role = iam.Role(
+            self, 'LambdaRole',
+            assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
+            description='Role for giving permissions to the Parsing Lambda Script.'
+        )
 
         parsing = _lambda.Function(
             self, 'ParsingLambda',
@@ -138,11 +137,11 @@ class CdkAppStack(Stack):
 
         database = glue.CfnDatabase(
             self, 'LogDatabase',
+            catalog_id='051270296548',
             database_input=glue.CfnDatabase.DatabaseInputProperty(
                 name='log_database',
                 description='Database of Chrome Log Information'
-            ),
-            catalog_id='051270296548'
+            )
         )
 
         table_generation = athena.CfnNamedQuery(
