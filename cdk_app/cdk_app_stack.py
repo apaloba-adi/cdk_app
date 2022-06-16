@@ -34,7 +34,7 @@ class CdkAppStack(Stack):
         lambda_role = iam.Role(
             self, 'LambdaRole',
             assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
-            description='Role for giving permissions to the Parsing Lambda Script.',
+            description='Role for giving permissions to the Parsing Lambda Script.'
         )
 
         parsing = _lambda.Function(
