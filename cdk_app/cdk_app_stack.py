@@ -10,6 +10,7 @@ from aws_cdk import (
     aws_athena as athena,
     aws_glue as glue
 )
+import aws_cdk
 from constructs import Construct
 
 class CdkAppStack(Stack):
@@ -20,7 +21,8 @@ class CdkAppStack(Stack):
         start_bucket = s3.Bucket(
             self, 'LogBucket',
             versioned=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
+            removal_policy=aws_cdk.RemovalPolicy.DESTROY
         )
 
         s3_deploy.BucketDeployment(
@@ -32,7 +34,7 @@ class CdkAppStack(Stack):
         lambda_role = iam.Role(
             self, 'LambdaRole',
             assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
-            description='Role for giving permissions to the Parsing Lambda Script.'
+            description='Role for giving permissions to the Parsing Lambda Script.',
         )
 
         parsing = _lambda.Function(
@@ -113,13 +115,15 @@ class CdkAppStack(Stack):
         athena_bucket = s3.Bucket(
             self, 'AthenaTable',
             versioned=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
+            removal_policy=aws_cdk.RemovalPolicy.DESTROY
         )
 
         grafana_bucket = s3.Bucket(
             self, 'grafana-athena-query-results-test',
             versioned=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
+            removal_policy=aws_cdk.RemovalPolicy.DESTROY
         )
 
         work_group = athena.CfnWorkGroup(
