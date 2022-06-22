@@ -1,15 +1,12 @@
-# Chrome Log Parsing App
+# Logging Simulation Application App
 
-### This application creates the infrastructure for
-- Uploading chrome debug logs to an S3 Bucket
-- Parsing debug logs via Lambda to generate a CSV File based off of log data
-- Generating a bucket, workgroup, and database for Athena
+This application provides a test application for demonstrating an AWS Logging pipeline.
 
-### Not done from this application
-- Creating table from Athena
-    - Tables based on data located in S3 buckets cannot be created via the CDK
-- Visualizations done by Grafana
-    - Grafana does not have any support from the CDK
+## This application includes infrastructure for
+- Necessary Buckets for log and tsv storage, Athena output, and grafana queries
+- Lambda Handler for Parsing
+- Athena workgroup, database, and query
 
-### Functionality Removed
-- Uploading log data to DynamoDB
+## To use this app
+1. Clone repository
+2. Deploy infrastructure via `cdk synth && deplot`

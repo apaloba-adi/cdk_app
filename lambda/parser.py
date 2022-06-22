@@ -22,35 +22,24 @@ def handler(event, context):
     file.write(log.decode('utf-8'))
     file.close()
     file = open('/tmp/test.log', 'r')
-    
-    db = boto3.resource('dynamodb')
-    process_id = None
-    thread_id = None
-    date_time = None
-    log_level = None
-    source_file = None
-    line_num = None
-    tag = None
 
     pattern = re.compile('^\[[\w\W]+?\]')
 
-    new_log = open('/tmp/new_log.tsv', 'w+')
+    new_log = open('/tmp/new_log.tsv', 'a+')
     for line in file:
         match = pattern.match(line)
         if match:
             new_line = match.group().strip()[1:-1]
-            attrs = new_line.split(':')
-            process_id = int(attrs[0])
-            thread_id = int(attrs[1])
-            date_time = attrs[2].split('/')
-            log_level = attrs[3]
-            source_file = re.findall(r'^.+\(', attrs[4])[0][:-1]
-            line_num = int(re.findall(r'\(\w*\)', attrs[4])[0][1:-1])
-            timestamp = "2022-{}-{} {}:{}:{}".format(date_time[0][:2], date_time[0][2:4], date_time[1][0:2], date_time[1][2:4], date_time[1][4:])
+            attrs = new_line.split('::')
+            date_time = attrs[0]
+            err_stat = attrs[1]
+            user = attrs[2]
+            char_count = int(attrs[3])
+            word_count = int(attrs[4])
             tag = line[match.end():].strip()
             try:
-                print('{}\t{}\t{}\t{}\t{}\t{}\t{}\n\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
-                new_log.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(timestamp,tag,source_file,line_num,process_id,thread_id, log_level))
+                print('{}\t{}\t{}\t{}\t{}\t{}\n'.format(date_time, err_stat, user, char_count, word_count, tag))
+                new_log.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(date_time, err_stat, user, char_count, word_count, tag))
             except ClientError as e:
                 return logging.error(e)
     new_log.close()

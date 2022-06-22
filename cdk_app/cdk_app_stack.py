@@ -25,12 +25,6 @@ class CdkAppStack(Stack):
             removal_policy=aws_cdk.RemovalPolicy.DESTROY
         )
 
-        s3_deploy.BucketDeployment(
-            self, 'DeployLog',
-            sources=[s3_deploy.Source.asset('/Users/apaloba/Library/Application Support/Google/Chrome/', exclude=['**', '!chrome_debug.log'])],
-            destination_bucket=start_bucket
-        )
-
         lambda_role = iam.Role(
             self, 'LambdaRole',
             assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -139,6 +133,13 @@ class CdkAppStack(Stack):
             )
         )
 
+        parsing.add_to_role_policy(iam.PolicyStatement(
+            sid='GrafanaPolicy',
+            actions=['managedgrafana:*'],
+            resources=['arn:aws:athena:us-east-1:051270296548:workgroup/{}'.format(work_group.name)],
+            effect=iam.Effect.ALLOW
+        ))
+
         database = glue.CfnDatabase(
             self, 'LogDatabase',
             catalog_id='051270296548',
@@ -152,13 +153,11 @@ class CdkAppStack(Stack):
             self, 'TableGenerationQuery',
             database='log_database',
             query_string="CREATE EXTERNAL TABLE IF NOT EXISTS `log_database`.`log_table` (\n" +
-                        "\t`timestamp` timestamp,\n" +
+                        "\t`date_time` timestamp,\n" +
+                        "\t`char_count` int,\n" +
+                        "\t`word_count` int,\n" +
+                        "\t`log_level` string" +
                         "\t`tag` string,\n" +
-                        "\t`source_file` string,\n" +
-                        "\t`line_num` string,\n" +
-                        "\t`thread_id` string,\n" +
-                        "\t`process_id` string,\n" +
-                        "\t`logging_level` string\n" +
                         ")\nROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'\n" + 
                         "WITH SERDEPROPERTIES (\n" +
                             "\t'serialization.format' = '	',\n"+
