@@ -51,22 +51,9 @@ class CdkAppStack(Stack):
             effect=iam.Effect.ALLOW
         ))
 
-        parsing.add_to_role_policy(iam.PolicyStatement(
-            sid='AthenaPolicy',
-            actions=['athena:*'],
-            resources=['arn:aws:athena:us-east-1:051270296548:workgroup/log_work_group'],
-            effect=iam.Effect.ALLOW
-        ))
 
         athena_bucket = s3.Bucket(
             self, 'AthenaTable',
-            versioned=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
-            removal_policy=aws_cdk.RemovalPolicy.DESTROY
-        )
-
-        grafana_bucket = s3.Bucket(
-            self, 'grafana-athena-query-results-test',
             versioned=True,
             block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
             removal_policy=aws_cdk.RemovalPolicy.DESTROY
@@ -83,6 +70,20 @@ class CdkAppStack(Stack):
                     output_location='s3://{}'.format(athena_bucket.bucket_name)
                 )
             )
+        )
+
+        parsing.add_to_role_policy(iam.PolicyStatement(
+            sid='AthenaPolicy',
+            actions=['athena:*'],
+            resources=['arn:aws:athena:us-east-1:051270296548:workgroup/{}'.format(work_group.name)],
+            effect=iam.Effect.ALLOW
+        ))
+
+        grafana_bucket = s3.Bucket(
+            self, 'grafana-athena-query-results-test',
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
+            removal_policy=aws_cdk.RemovalPolicy.DESTROY
         )
 
         parsing.add_to_role_policy(iam.PolicyStatement(
