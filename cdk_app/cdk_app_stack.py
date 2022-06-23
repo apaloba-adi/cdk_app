@@ -58,53 +58,6 @@ class CdkAppStack(Stack):
             effect=iam.Effect.ALLOW
         ))
 
-        '''
-        bucket.add_to_resource_policy(iam.PolicyStatement(
-            sid='AccessPolicy',
-            principals=[lambda_role, iam.AccountPrincipal(self.account)],
-            actions=['s3:*'],
-            effect=iam.Effect.ALLOW,
-            resources=[bucket.bucket_arn, '{}/*'.format(bucket.bucket_arn)]
-        ))
-        
-
-        #process_id = dynamodb.Attribute(name='ProcessID', type=dynamodb.AttributeType.NUMBER)
-        #thread_id = dynamodb.Attribute(name='ThreadID', type=dynamodb.AttributeType.NUMBER)
-        date = dynamodb.Attribute(name='Date', type=dynamodb.AttributeType.STRING)
-        time = dynamodb.Attribute(name='Time', type=dynamodb.AttributeType.STRING)
-        #logging_level = dynamodb.Attribute(name='LoggingLevel', type=dynamodb.AttributeType.STRING)
-        source_code = dynamodb.Attribute(name='Source-Code File', type=dynamodb.AttributeType.STRING)
-        line_number = dynamodb.Attribute(name='Line Number',type=dynamodb.AttributeType.NUMBER)
-        tag = dynamodb.Attribute(name='Tag', type=dynamodb.AttributeType.STRING)
-
-        table = dynamodb.Table(
-            self, 'LogItems',
-            partition_key=tag,
-            sort_key=date,
-            billing_mode=dynamodb.BillingMode.PROVISIONED
-        )
-
-        table.add_global_secondary_index(
-            index_name='Date_Time',
-            partition_key=date,
-            sort_key=time
-        )
-
-        table.add_global_secondary_index(
-            index_name='Source-Code_Line-Number',
-            partition_key=source_code,
-            sort_key=line_number
-        )
-
-        parsing.add_to_role_policy(iam.PolicyStatement(
-            sid='DynamoDBPolicy',
-            actions=['dynamodb:*'],
-            resources=[table.table_arn, '{}/*'.format(table.table_arn)],
-            effect=iam.Effect.ALLOW
-        ))
-
-        '''
-
         athena_bucket = s3.Bucket(
             self, 'AthenaTable',
             versioned=True,
