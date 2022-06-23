@@ -44,4 +44,8 @@ file.close()
 
 s3 = boto3.client('s3')
 
-s3.upload_file(file.name, 'cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo', 'word_log.log')
+
+#change name to correct logbucket generated
+bucket_name = 'cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo'
+
+s3.upload_file(file.name, bucket_name, 'word_log.log')
