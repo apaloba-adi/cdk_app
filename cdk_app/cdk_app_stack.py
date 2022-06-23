@@ -154,10 +154,10 @@ class CdkAppStack(Stack):
             database='log_database',
             query_string="CREATE EXTERNAL TABLE IF NOT EXISTS `log_database`.`log_table` (\n" +
                         "\t`date_time` timestamp,\n" +
+                        "\t`err_class` string,\n" +
+                        "\t`user` string\n" +
                         "\t`char_count` int,\n" +
                         "\t`word_count` int,\n" +
-                        "\t`log_level` string" +
-                        "\t`tag` string,\n" +
                         ")\nROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'\n" + 
                         "WITH SERDEPROPERTIES (\n" +
                             "\t'serialization.format' = '	',\n"+
@@ -165,5 +165,5 @@ class CdkAppStack(Stack):
                         ") LOCATION 's3://cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo/'\n" +
                          "TBLPROPERTIES ('has_encrypted_data'='false');\n",
             name='table_generation',
-            work_group='log_work_group'
+            work_group=work_group.name
         )
