@@ -3,7 +3,6 @@ from aws_cdk import (
     Duration,
     Stack,
     aws_s3 as s3,
-    aws_s3_deployment as s3_deploy,
     aws_lambda as _lambda,
     aws_lambda_event_sources as _lambda_event_sources,
     aws_iam as iam,
