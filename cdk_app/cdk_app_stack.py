@@ -157,6 +157,7 @@ class CdkAppStack(Stack):
                         "\t`user` string\n" +
                         "\t`char_count` int,\n" +
                         "\t`word_count` int,\n" +
+                        "\t`tag` string,\n" +
                         ")\nROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'\n" + 
                         "WITH SERDEPROPERTIES (\n" +
                             "\t'serialization.format' = '	',\n"+
