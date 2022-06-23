@@ -3,8 +3,7 @@ import boto3
 from botocore.exceptions import ClientError
 import logging
 import re
-from decimal import Decimal
-from datetime import (datetime, date, time)
+from datetime import (datetime, date)
 
 def handler(event, context):
     s3 = boto3.client('s3')
