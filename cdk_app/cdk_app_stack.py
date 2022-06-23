@@ -165,5 +165,6 @@ class CdkAppStack(Stack):
                         ") LOCATION 's3://cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo/'\n" +
                          "TBLPROPERTIES ('has_encrypted_data'='false');\n",
             name='table_generation',
+            description='Query to generate table. Only needs to be run onces unless you change table format.',
             work_group=work_group.name
         )
