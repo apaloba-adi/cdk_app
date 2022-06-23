@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 import logging
 import re
 from decimal import Decimal
+from datetime import (datetime, date, time)
 
 def handler(event, context):
     s3 = boto3.client('s3')
@@ -25,7 +26,7 @@ def handler(event, context):
 
     pattern = re.compile('^\[[\w\W]+?\]')
 
-    new_log = open('/tmp/new_log.tsv', 'a+')
+    new_log = open('/tmp/new_log.tsv', 'w+')
     for line in file:
         match = pattern.match(line)
         if match:
@@ -44,7 +45,7 @@ def handler(event, context):
                 return logging.error(e)
     new_log.close()
     try:
-        s3.upload_file(new_log.name, bucket_name, 'log_data.tsv')
+        s3.upload_file(new_log.name, bucket_name, 'log_data_{}_{}.tsv'.format(date.today(), datetime.now().strftime('%H:%M:%S')))
     except ClientError as e:
         return logging.error(e)
     

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import (datetime, date, time)
 import random
 import boto3
 
@@ -36,9 +36,9 @@ while True:
     words = len(sentence.split(' '))
     user = random.choice(users)
     if error_num == num:
-        file.write('\n[{}::ERROR::{}::{}::{}] {}\n'.format(datetime.now(), user, length, words, random.choice(errors)))
+        file.write('[{}::ERROR::{}::{}::{}] {}\n'.format(datetime.now(), user, length, words, random.choice(errors)))
     else:
-        file.write('\n[{}::INFO::{}::{}::{}] {}\n'.format(datetime.now(), user, length, words, sentence))
+        file.write('[{}::INFO::{}::{}::{}] {}\n'.format(datetime.now(), user, length, words, sentence))
 
 file.close()
 
