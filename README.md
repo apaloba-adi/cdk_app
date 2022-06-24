@@ -8,11 +8,12 @@ This application provides a test application for demonstrating an AWS Logging pi
 - Athena workgroup, database, and query
 
 ## To use this app for the first time
-1. Clone repositoryIn `log_generation/log_generator.py`, replace the link to the bucket with a link to the bucket named LogBucket.
-2. Deploy infrastructure via `cdk synth && cdk deploy --outputs-file outputs.txt`
-3. Go to Athena console and run the saved Athena query, modify bucket name with generated 'LogBucket' name (found in outputs.txt).
-4. Run `log_generation/log_generator.py`, input as many statements as desired. Enter blank statement in order to finish.
-5. Import `Dashboard.json` to Grafana
-6. Enjoy!
+1. Clone repository 
+2. In `log_generation/log_generator.py`, replace the link to the bucket with a link to the bucket named LogBucket.
+3. Deploy infrastructure via `cdk synth && cdk deploy --outputs-file outputs.txt`
+4. Go to Athena console and run the saved Athena query, modify bucket name with generated 'LogBucket' name (found in outputs.txt).
+5. Run `log_generation/log_generator.py`, input as many statements as desired. Enter blank statement in order to finish.
+6. Import `Dashboard.json` to Grafana
+7. Enjoy!
 
 ### To use this app after, simply repeat step 4
