@@ -75,7 +75,7 @@ class CdkAppStack(Stack):
         parsing.add_to_role_policy(iam.PolicyStatement(
             sid='AthenaPolicy',
             actions=['athena:*'],
-            resources=['arn:aws:athena:us-east-1:051270296548:workgroup/{}'.format(work_group.name)],
+            resources=['arn:aws:athena:{}:{}:workgroup/{}'.format(self.region, self.account, work_group.name)],
             effect=iam.Effect.ALLOW
         ))
 
@@ -89,13 +89,13 @@ class CdkAppStack(Stack):
         parsing.add_to_role_policy(iam.PolicyStatement(
             sid='GrafanaPolicy',
             actions=['managedgrafana:*'],
-            resources=['arn:aws:athena:us-east-1:051270296548:workgroup/{}'.format(work_group.name)],
+            resources=['arn:aws:athena:{}:{}:workgroup/{}'.format(self.region, self.account, work_group.name)],
             effect=iam.Effect.ALLOW
         ))
 
         database = glue.CfnDatabase(
             self, 'LogDatabase',
-            catalog_id='051270296548',
+            catalog_id=self.account,
             database_input=glue.CfnDatabase.DatabaseInputProperty(
                 name='log_database',
                 description='Database of Chrome Log Information'
@@ -123,7 +123,7 @@ class CdkAppStack(Stack):
             work_group=work_group.name
         )
 
-        output = aws_cdk.CfnOutput(
+        bucket_arn = aws_cdk.CfnOutput(
             self, 'Output',
             value=start_bucket.bucket_arn
         )
