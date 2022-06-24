@@ -1,9 +1,13 @@
 from datetime import (datetime)
 import random
+from tkinter import W
 import boto3
 import json
+import os
 
-file = open('log_generation/word_log.log', 'w+')
+proj_root = os.path.dirname(os.path.dirname(__file__))
+
+file = open('{}/log_generation/word_log.log'.format(proj_root), 'w+')
 
 error_num = random.randint(1, 5)
 
@@ -48,7 +52,7 @@ s3 = boto3.client('s3')
 
 #change name to correct logbucket generated
 
-bucket_file = open('outputs.txt')
+bucket_file = open('{}/outputs.txt'.format(proj_root), 'r')
 bucket_name = json.load(bucket_file)['CdkAppStack']['Output'].split(':::')[1]
 bucket_file.close()
 
