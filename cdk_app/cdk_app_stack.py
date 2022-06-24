@@ -116,7 +116,7 @@ class CdkAppStack(Stack):
                         "WITH SERDEPROPERTIES (\n" +
                             "\t'serialization.format' = '	',\n"+
                             "\t'field.delim' = '	'\n" +
-                        ") LOCATION 's3://cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo/'\n" +
+                        ") LOCATION 's3://cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo/'\n" + #In Athena, update with correct bucket name once deployed
                          "TBLPROPERTIES ('has_encrypted_data'='false');\n",
             name='table_generation',
             description='Query to generate table. Only needs to be run once unless you change table format.',
