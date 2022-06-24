@@ -1,6 +1,7 @@
 from datetime import (datetime)
 import random
 import boto3
+import json
 
 file = open('log_generation/word_log.log', 'w+')
 
@@ -46,6 +47,9 @@ s3 = boto3.client('s3')
 
 
 #change name to correct logbucket generated
-bucket_name = 'cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo'
+
+bucket_file = open('outputs.txt')
+bucket_name = json.load(bucket_file)['CdkAppStack']['Output'].split(':::')[1]
+bucket_file.close()
 
 s3.upload_file(file.name, bucket_name, 'word_log.log')

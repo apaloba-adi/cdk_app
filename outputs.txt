@@ -1,0 +1,5 @@
+{
+  "CdkAppStack": {
+    "Output": "arn:aws:s3:::cdkappstack-logbucketcc3b17e8-1ms8j0ohr6djo"
+  }
+}
